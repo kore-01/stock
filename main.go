@@ -312,7 +312,7 @@ func handleGetStockRealtime(ctx context.Context, request mcp.CallToolRequest) (*
 	codes, ok := request.Params.Arguments["codes"].(string)
 	if !ok || codes == "" {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{mcp.TextContent{Text: "股票代码不能为空"}},
+			Content: []mcp.Content{mcp.NewTextContent("股票代码不能为空")},
 			IsError: true,
 		}, nil
 	}
@@ -320,7 +320,7 @@ func handleGetStockRealtime(ctx context.Context, request mcp.CallToolRequest) (*
 	stocks, err := fetchStockRealTime(codes)
 	if err != nil {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{mcp.TextContent{Text: fmt.Sprintf("获取股票数据失败: %v", err)}},
+			Content: []mcp.Content{mcp.NewTextContent(fmt.Sprintf("获取股票数据失败: %v", err))},
 			IsError: true,
 		}, nil
 	}
@@ -328,12 +328,12 @@ func handleGetStockRealtime(ctx context.Context, request mcp.CallToolRequest) (*
 	data, err := json.MarshalIndent(stocks, "", "  ")
 	if err != nil {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{mcp.TextContent{Text: fmt.Sprintf("序列化数据失败: %v", err)}},
+			Content: []mcp.Content{mcp.NewTextContent(fmt.Sprintf("序列化数据失败: %v", err))},
 			IsError: true,
 		}, nil
 	}
 
-	return newToolResultText(string(data)), nil
+	return mcp.NewToolResultText(string(data)), nil
 }
 
 // handleSearchStocks 处理搜索股票
@@ -341,7 +341,7 @@ func handleSearchStocks(ctx context.Context, request mcp.CallToolRequest) (*mcp.
 	keyword, ok := request.Params.Arguments["keyword"].(string)
 	if !ok || keyword == "" {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{mcp.TextContent{Text: "搜索关键词不能为空"}},
+			Content: []mcp.Content{mcp.NewTextContent("搜索关键词不能为空")},
 			IsError: true,
 		}, nil
 	}
@@ -352,12 +352,17 @@ func handleSearchStocks(ctx context.Context, request mcp.CallToolRequest) (*mcp.
 	data, err := json.MarshalIndent(results, "", "  ")
 	if err != nil {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{mcp.TextContent{Text: fmt.Sprintf("序列化数据失败: %v", err)}},
+			Content: []mcp.Content{mcp.NewTextContent(fmt.Sprintf("序列化数据失败: %v", err))},
 			IsError: true,
 		}, nil
 	}
 
-	return newToolResultText(string(data)), nil
+	result := mcp.NewToolResultText(string(data))
+	// 调试日志：输出返回结果
+	resultJSON, _ := json.MarshalIndent(result, "", "  ")
+	log.Printf("[DEBUG] search_stocks 返回结果: %s", string(resultJSON))
+
+	return result, nil
 }
 
 // handleGetKLineData 处理获取K线数据
@@ -368,7 +373,7 @@ func handleGetKLineData(ctx context.Context, request mcp.CallToolRequest) (*mcp.
 
 	if code == "" {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{mcp.TextContent{Text: "股票代码不能为空"}},
+			Content: []mcp.Content{mcp.NewTextContent("股票代码不能为空")},
 			IsError: true,
 		}, nil
 	}
@@ -382,7 +387,7 @@ func handleGetKLineData(ctx context.Context, request mcp.CallToolRequest) (*mcp.
 	klines, err := fetchKLineData(code, period, int(days))
 	if err != nil {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{mcp.TextContent{Text: fmt.Sprintf("获取K线数据失败: %v", err)}},
+			Content: []mcp.Content{mcp.NewTextContent(fmt.Sprintf("获取K线数据失败: %v", err))},
 			IsError: true,
 		}, nil
 	}
@@ -390,12 +395,17 @@ func handleGetKLineData(ctx context.Context, request mcp.CallToolRequest) (*mcp.
 	data, err := json.MarshalIndent(klines, "", "  ")
 	if err != nil {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{mcp.TextContent{Text: fmt.Sprintf("序列化数据失败: %v", err)}},
+			Content: []mcp.Content{mcp.NewTextContent(fmt.Sprintf("序列化数据失败: %v", err))},
 			IsError: true,
 		}, nil
 	}
 
-	return newToolResultText(string(data)), nil
+	result := mcp.NewToolResultText(string(data))
+	// 调试日志：输出返回结果
+	resultJSON, _ := json.MarshalIndent(result, "", "  ")
+	log.Printf("[DEBUG] get_kline_data 返回结果: %s", string(resultJSON))
+
+	return result, nil
 }
 
 // handleGetOrderBook 处理获取盘口数据
@@ -403,7 +413,7 @@ func handleGetOrderBook(ctx context.Context, request mcp.CallToolRequest) (*mcp.
 	code, ok := request.Params.Arguments["code"].(string)
 	if !ok || code == "" {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{mcp.TextContent{Text: "股票代码不能为空"}},
+			Content: []mcp.Content{mcp.NewTextContent("股票代码不能为空")},
 			IsError: true,
 		}, nil
 	}
@@ -411,7 +421,7 @@ func handleGetOrderBook(ctx context.Context, request mcp.CallToolRequest) (*mcp.
 	orderbook, err := fetchOrderBook(code)
 	if err != nil {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{mcp.TextContent{Text: fmt.Sprintf("获取盘口数据失败: %v", err)}},
+			Content: []mcp.Content{mcp.NewTextContent(fmt.Sprintf("获取盘口数据失败: %v", err))},
 			IsError: true,
 		}, nil
 	}
@@ -419,12 +429,12 @@ func handleGetOrderBook(ctx context.Context, request mcp.CallToolRequest) (*mcp.
 	data, err := json.MarshalIndent(orderbook, "", "  ")
 	if err != nil {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{mcp.TextContent{Text: fmt.Sprintf("序列化数据失败: %v", err)}},
+			Content: []mcp.Content{mcp.NewTextContent(fmt.Sprintf("序列化数据失败: %v", err))},
 			IsError: true,
 		}, nil
 	}
 
-	return newToolResultText(string(data)), nil
+	return mcp.NewToolResultText(string(data)), nil
 }
 
 // handleGetBaiduHot 处理获取百度热搜
@@ -437,7 +447,7 @@ func handleGetBaiduHot(ctx context.Context, request mcp.CallToolRequest) (*mcp.C
 	items, err := fetchBaiduHot(int(limit))
 	if err != nil {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{mcp.TextContent{Text: fmt.Sprintf("获取百度热搜失败: %v", err)}},
+			Content: []mcp.Content{mcp.NewTextContent(fmt.Sprintf("获取百度热搜失败: %v", err))},
 			IsError: true,
 		}, nil
 	}
@@ -445,12 +455,12 @@ func handleGetBaiduHot(ctx context.Context, request mcp.CallToolRequest) (*mcp.C
 	data, err := json.MarshalIndent(items, "", "  ")
 	if err != nil {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{mcp.TextContent{Text: fmt.Sprintf("序列化数据失败: %v", err)}},
+			Content: []mcp.Content{mcp.NewTextContent(fmt.Sprintf("序列化数据失败: %v", err))},
 			IsError: true,
 		}, nil
 	}
 
-	return newToolResultText(string(data)), nil
+	return mcp.NewToolResultText(string(data)), nil
 }
 
 // handleGetDouyinHot 处理获取抖音热搜
@@ -463,7 +473,7 @@ func handleGetDouyinHot(ctx context.Context, request mcp.CallToolRequest) (*mcp.
 	items, err := fetchDouyinHot(int(limit))
 	if err != nil {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{mcp.TextContent{Text: fmt.Sprintf("获取抖音热搜失败: %v", err)}},
+			Content: []mcp.Content{mcp.NewTextContent(fmt.Sprintf("获取抖音热搜失败: %v", err))},
 			IsError: true,
 		}, nil
 	}
@@ -471,12 +481,12 @@ func handleGetDouyinHot(ctx context.Context, request mcp.CallToolRequest) (*mcp.
 	data, err := json.MarshalIndent(items, "", "  ")
 	if err != nil {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{mcp.TextContent{Text: fmt.Sprintf("序列化数据失败: %v", err)}},
+			Content: []mcp.Content{mcp.NewTextContent(fmt.Sprintf("序列化数据失败: %v", err))},
 			IsError: true,
 		}, nil
 	}
 
-	return newToolResultText(string(data)), nil
+	return mcp.NewToolResultText(string(data)), nil
 }
 
 // handleGetBilibiliHot 处理获取B站热搜
@@ -489,7 +499,7 @@ func handleGetBilibiliHot(ctx context.Context, request mcp.CallToolRequest) (*mc
 	items, err := fetchBilibiliHot(int(limit))
 	if err != nil {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{mcp.TextContent{Text: fmt.Sprintf("获取B站热搜失败: %v", err)}},
+			Content: []mcp.Content{mcp.NewTextContent(fmt.Sprintf("获取B站热搜失败: %v", err))},
 			IsError: true,
 		}, nil
 	}
@@ -497,12 +507,12 @@ func handleGetBilibiliHot(ctx context.Context, request mcp.CallToolRequest) (*mc
 	data, err := json.MarshalIndent(items, "", "  ")
 	if err != nil {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{mcp.TextContent{Text: fmt.Sprintf("序列化数据失败: %v", err)}},
+			Content: []mcp.Content{mcp.NewTextContent(fmt.Sprintf("序列化数据失败: %v", err))},
 			IsError: true,
 		}, nil
 	}
 
-	return newToolResultText(string(data)), nil
+	return mcp.NewToolResultText(string(data)), nil
 }
 
 // handleGetMarketIndices 处理获取大盘指数
@@ -510,7 +520,7 @@ func handleGetMarketIndices(ctx context.Context, request mcp.CallToolRequest) (*
 	indices, err := fetchMarketIndices()
 	if err != nil {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{mcp.TextContent{Text: fmt.Sprintf("获取大盘指数失败: %v", err)}},
+			Content: []mcp.Content{mcp.NewTextContent(fmt.Sprintf("获取大盘指数失败: %v", err))},
 			IsError: true,
 		}, nil
 	}
@@ -518,12 +528,12 @@ func handleGetMarketIndices(ctx context.Context, request mcp.CallToolRequest) (*
 	data, err := json.MarshalIndent(indices, "", "  ")
 	if err != nil {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{mcp.TextContent{Text: fmt.Sprintf("序列化数据失败: %v", err)}},
+			Content: []mcp.Content{mcp.NewTextContent(fmt.Sprintf("序列化数据失败: %v", err))},
 			IsError: true,
 		}, nil
 	}
 
-	return newToolResultText(string(data)), nil
+	return mcp.NewToolResultText(string(data)), nil
 }
 
 // handleGetMarketStatus 处理获取市场状态
@@ -533,12 +543,12 @@ func handleGetMarketStatus(ctx context.Context, request mcp.CallToolRequest) (*m
 	data, err := json.MarshalIndent(status, "", "  ")
 	if err != nil {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{mcp.TextContent{Text: fmt.Sprintf("序列化数据失败: %v", err)}},
+			Content: []mcp.Content{mcp.NewTextContent(fmt.Sprintf("序列化数据失败: %v", err))},
 			IsError: true,
 		}, nil
 	}
 
-	return newToolResultText(string(data)), nil
+	return mcp.NewToolResultText(string(data)), nil
 }
 
 // fetchStockRealTime 从新浪获取股票实时数据
@@ -1056,18 +1066,6 @@ func getFloat(m map[string]interface{}, key string) float64 {
 	}
 }
 
-// newToolResultText 创建正确的 MCP 文本结果
-func newToolResultText(text string) *mcp.CallToolResult {
-	return &mcp.CallToolResult{
-		Content: []mcp.Content{
-			mcp.TextContent{
-				Type: "text",
-				Text: text,
-			},
-		},
-	}
-}
-
 // ========== 龙虎榜功能 ==========
 
 // registerLongHuBangTools 注册龙虎榜相关 Tools
@@ -1105,7 +1103,7 @@ func handleGetLongHuBang(ctx context.Context, request mcp.CallToolRequest) (*mcp
 	items, err := fetchLongHuBang(int(pageSize), int(pageNumber), tradeDate)
 	if err != nil {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{mcp.TextContent{Text: fmt.Sprintf("获取龙虎榜失败: %v", err)}},
+			Content: []mcp.Content{mcp.NewTextContent(fmt.Sprintf("获取龙虎榜失败: %v", err))},
 			IsError: true,
 		}, nil
 	}
@@ -1113,12 +1111,12 @@ func handleGetLongHuBang(ctx context.Context, request mcp.CallToolRequest) (*mcp
 	data, err := json.MarshalIndent(items, "", "  ")
 	if err != nil {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{mcp.TextContent{Text: fmt.Sprintf("序列化数据失败: %v", err)}},
+			Content: []mcp.Content{mcp.NewTextContent(fmt.Sprintf("序列化数据失败: %v", err))},
 			IsError: true,
 		}, nil
 	}
 
-	return newToolResultText(string(data)), nil
+	return mcp.NewToolResultText(string(data)), nil
 }
 
 // fetchLongHuBang 获取龙虎榜数据
@@ -1221,7 +1219,7 @@ func handleGetResearchReports(ctx context.Context, request mcp.CallToolRequest) 
 
 	if stockCode == "" {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{mcp.TextContent{Text: "股票代码不能为空"}},
+			Content: []mcp.Content{mcp.NewTextContent("股票代码不能为空")},
 			IsError: true,
 		}, nil
 	}
@@ -1240,7 +1238,7 @@ func handleGetResearchReports(ctx context.Context, request mcp.CallToolRequest) 
 	reports, err := fetchResearchReports(stockCode, int(pageSize), int(pageNo))
 	if err != nil {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{mcp.TextContent{Text: fmt.Sprintf("获取研报失败: %v", err)}},
+			Content: []mcp.Content{mcp.NewTextContent(fmt.Sprintf("获取研报失败: %v", err))},
 			IsError: true,
 		}, nil
 	}
@@ -1248,12 +1246,12 @@ func handleGetResearchReports(ctx context.Context, request mcp.CallToolRequest) 
 	data, err := json.MarshalIndent(reports, "", "  ")
 	if err != nil {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{mcp.TextContent{Text: fmt.Sprintf("序列化数据失败: %v", err)}},
+			Content: []mcp.Content{mcp.NewTextContent(fmt.Sprintf("序列化数据失败: %v", err))},
 			IsError: true,
 		}, nil
 	}
 
-	return newToolResultText(string(data)), nil
+	return mcp.NewToolResultText(string(data)), nil
 }
 
 // fetchResearchReports 获取研报数据
@@ -1340,7 +1338,7 @@ func handleGetTelegraphs(ctx context.Context, request mcp.CallToolRequest) (*mcp
 	tels, err := fetchTelegraphs(int(limit))
 	if err != nil {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{mcp.TextContent{Text: fmt.Sprintf("获取快讯失败: %v", err)}},
+			Content: []mcp.Content{mcp.NewTextContent(fmt.Sprintf("获取快讯失败: %v", err))},
 			IsError: true,
 		}, nil
 	}
@@ -1348,12 +1346,12 @@ func handleGetTelegraphs(ctx context.Context, request mcp.CallToolRequest) (*mcp
 	data, err := json.MarshalIndent(tels, "", "  ")
 	if err != nil {
 		return &mcp.CallToolResult{
-			Content: []mcp.Content{mcp.TextContent{Text: fmt.Sprintf("序列化数据失败: %v", err)}},
+			Content: []mcp.Content{mcp.NewTextContent(fmt.Sprintf("序列化数据失败: %v", err))},
 			IsError: true,
 		}, nil
 	}
 
-	return newToolResultText(string(data)), nil
+	return mcp.NewToolResultText(string(data)), nil
 }
 
 // fetchTelegraphs 获取财联社快讯
