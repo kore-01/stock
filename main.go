@@ -999,47 +999,55 @@ func getMarketStatus() MarketStatus {
 
 // searchStocksFromEmbedded 从内置列表搜索股票
 func searchStocksFromEmbedded(keyword string) []StockSearchResult {
-	// 这里简化处理，实际应该从内置的 stock_basic.json 加载
-	// 返回匹配的A股列表
-	var results []StockSearchResult
-	keyword = strings.ToLower(keyword)
+	// 使用东方财富搜索API获取实时股票数据
+	url := fmt.Sprintf("https://searchapi.eastmoney.com/api/suggest/get?input=%s&type=14&count=20", keyword)
 
-	// 预定义的常见股票数据
-	stockList := []struct {
-		Code   string
-		Name   string
-		Pinyin string
-	}{
-		{"sh600519", "贵州茅台", "maotai"},
-		{"sz000001", "平安银行", "pinganyinhang"},
-		{"sh600036", "招商银行", "zhaoshangyinhang"},
-		{"sz000002", "万科A", "wanke"},
-		{"sh600276", "恒瑞医药", "hengruiyiyao"},
-		{"sh600030", "中信证券", "zhongxinzhengquan"},
-		{"sz000858", "五粮液", "wuliangye"},
-		{"sh601318", "中国平安", "zhongguopingan"},
-		{"sz002594", "比亚迪", "biyadi"},
-		{"sh600887", "伊利股份", "yiligufen"},
-		{"sh600844", "丹化科技", "danhuakeji"},
-		{"sz300059", "东方财富", "dongfangcaifu"},
-		{"sh600000", "浦发银行", "pufayinhang"},
+	req, err := http.NewRequest("GET", url, nil)
+	if err != nil {
+		return []StockSearchResult{}
+	}
+	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
+
+	resp, err := httpClient.Do(req)
+	if err != nil {
+		return []StockSearchResult{}
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return []StockSearchResult{}
 	}
 
-	for _, s := range stockList {
-		if strings.Contains(strings.ToLower(s.Code), keyword) ||
-			strings.Contains(strings.ToLower(s.Name), keyword) ||
-			strings.Contains(s.Pinyin, keyword) {
-			// 提取市场前缀
-			market := "sh"
-			if strings.HasPrefix(s.Code, "sz") {
-				market = "sz"
-			}
-			results = append(results, StockSearchResult{
-				Code:   s.Code,
-				Name:   s.Name,
-				Market: market,
-			})
+	// 解析JSON响应
+	var result struct {
+		QuotationCodeTable struct {
+			Data []struct {
+				Code   string `json:"Code"`
+				Name   string `json:"Name"`
+				Market string `json:"MarketType"`
+			} `json:"Data"`
+		} `json:"QuotationCodeTable"`
+	}
+
+	if err := json.Unmarshal(body, &result); err != nil {
+		return []StockSearchResult{}
+	}
+
+	var results []StockSearchResult
+	for _, item := range result.QuotationCodeTable.Data {
+		// 根据市场类型添加前缀
+		prefix := "sh"
+		market := "sh"
+		if item.Market == "2" {
+			prefix = "sz"
+			market = "sz"
 		}
+		results = append(results, StockSearchResult{
+			Code:   prefix + item.Code,
+			Name:   item.Name,
+			Market: market,
+		})
 	}
 
 	return results
