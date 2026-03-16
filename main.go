@@ -333,7 +333,7 @@ func handleGetStockRealtime(ctx context.Context, request mcp.CallToolRequest) (*
 		}, nil
 	}
 
-	return mcp.NewToolResultText(string(data)), nil
+	return newToolResultText(string(data)), nil
 }
 
 // handleSearchStocks 处理搜索股票
@@ -357,7 +357,7 @@ func handleSearchStocks(ctx context.Context, request mcp.CallToolRequest) (*mcp.
 		}, nil
 	}
 
-	return mcp.NewToolResultText(string(data)), nil
+	return newToolResultText(string(data)), nil
 }
 
 // handleGetKLineData 处理获取K线数据
@@ -395,7 +395,7 @@ func handleGetKLineData(ctx context.Context, request mcp.CallToolRequest) (*mcp.
 		}, nil
 	}
 
-	return mcp.NewToolResultText(string(data)), nil
+	return newToolResultText(string(data)), nil
 }
 
 // handleGetOrderBook 处理获取盘口数据
@@ -424,7 +424,7 @@ func handleGetOrderBook(ctx context.Context, request mcp.CallToolRequest) (*mcp.
 		}, nil
 	}
 
-	return mcp.NewToolResultText(string(data)), nil
+	return newToolResultText(string(data)), nil
 }
 
 // handleGetBaiduHot 处理获取百度热搜
@@ -450,7 +450,7 @@ func handleGetBaiduHot(ctx context.Context, request mcp.CallToolRequest) (*mcp.C
 		}, nil
 	}
 
-	return mcp.NewToolResultText(string(data)), nil
+	return newToolResultText(string(data)), nil
 }
 
 // handleGetDouyinHot 处理获取抖音热搜
@@ -476,7 +476,7 @@ func handleGetDouyinHot(ctx context.Context, request mcp.CallToolRequest) (*mcp.
 		}, nil
 	}
 
-	return mcp.NewToolResultText(string(data)), nil
+	return newToolResultText(string(data)), nil
 }
 
 // handleGetBilibiliHot 处理获取B站热搜
@@ -502,7 +502,7 @@ func handleGetBilibiliHot(ctx context.Context, request mcp.CallToolRequest) (*mc
 		}, nil
 	}
 
-	return mcp.NewToolResultText(string(data)), nil
+	return newToolResultText(string(data)), nil
 }
 
 // handleGetMarketIndices 处理获取大盘指数
@@ -523,7 +523,7 @@ func handleGetMarketIndices(ctx context.Context, request mcp.CallToolRequest) (*
 		}, nil
 	}
 
-	return mcp.NewToolResultText(string(data)), nil
+	return newToolResultText(string(data)), nil
 }
 
 // handleGetMarketStatus 处理获取市场状态
@@ -538,7 +538,7 @@ func handleGetMarketStatus(ctx context.Context, request mcp.CallToolRequest) (*m
 		}, nil
 	}
 
-	return mcp.NewToolResultText(string(data)), nil
+	return newToolResultText(string(data)), nil
 }
 
 // fetchStockRealTime 从新浪获取股票实时数据
@@ -1056,6 +1056,18 @@ func getFloat(m map[string]interface{}, key string) float64 {
 	}
 }
 
+// newToolResultText 创建正确的 MCP 文本结果
+func newToolResultText(text string) *mcp.CallToolResult {
+	return &mcp.CallToolResult{
+		Content: []mcp.Content{
+			mcp.TextContent{
+				Type: "text",
+				Text: text,
+			},
+		},
+	}
+}
+
 // ========== 龙虎榜功能 ==========
 
 // registerLongHuBangTools 注册龙虎榜相关 Tools
@@ -1106,7 +1118,7 @@ func handleGetLongHuBang(ctx context.Context, request mcp.CallToolRequest) (*mcp
 		}, nil
 	}
 
-	return mcp.NewToolResultText(string(data)), nil
+	return newToolResultText(string(data)), nil
 }
 
 // fetchLongHuBang 获取龙虎榜数据
@@ -1241,7 +1253,7 @@ func handleGetResearchReports(ctx context.Context, request mcp.CallToolRequest) 
 		}, nil
 	}
 
-	return mcp.NewToolResultText(string(data)), nil
+	return newToolResultText(string(data)), nil
 }
 
 // fetchResearchReports 获取研报数据
@@ -1341,7 +1353,7 @@ func handleGetTelegraphs(ctx context.Context, request mcp.CallToolRequest) (*mcp
 		}, nil
 	}
 
-	return mcp.NewToolResultText(string(data)), nil
+	return newToolResultText(string(data)), nil
 }
 
 // fetchTelegraphs 获取财联社快讯
