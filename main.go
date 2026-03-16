@@ -10,6 +10,7 @@ import (
 	"io"
 	"log"
 	"net/http"
+	"net/url"
 	"os"
 	"regexp"
 	"strconv"
@@ -346,8 +347,12 @@ func handleSearchStocks(ctx context.Context, request mcp.CallToolRequest) (*mcp.
 		}, nil
 	}
 
+	log.Printf("[DEBUG] search_stocks 收到关键词: %s", keyword)
+
 	// 从内置股票列表中搜索
 	results := searchStocksFromEmbedded(keyword)
+
+	log.Printf("[DEBUG] searchStocksFromEmbedded 返回: %v", results)
 
 	data, err := json.MarshalIndent(results, "", "  ")
 	if err != nil {
@@ -1000,24 +1005,30 @@ func getMarketStatus() MarketStatus {
 // searchStocksFromEmbedded 从内置列表搜索股票
 func searchStocksFromEmbedded(keyword string) []StockSearchResult {
 	// 使用东方财富搜索API获取实时股票数据
-	url := fmt.Sprintf("https://searchapi.eastmoney.com/api/suggest/get?input=%s&type=14&count=20", keyword)
+	encodedKeyword := url.QueryEscape(keyword)
+	url := fmt.Sprintf("https://searchapi.eastmoney.com/api/suggest/get?input=%s&type=14&count=20", encodedKeyword)
+	log.Printf("[DEBUG] 搜索API URL: %s", url)
 
 	req, err := http.NewRequest("GET", url, nil)
 	if err != nil {
+		log.Printf("[ERROR] 创建请求失败: %v", err)
 		return []StockSearchResult{}
 	}
 	req.Header.Set("User-Agent", "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36")
 
 	resp, err := httpClient.Do(req)
 	if err != nil {
+		log.Printf("[ERROR] API请求失败: %v", err)
 		return []StockSearchResult{}
 	}
 	defer resp.Body.Close()
 
 	body, err := io.ReadAll(resp.Body)
 	if err != nil {
+		log.Printf("[ERROR] 读取响应失败: %v", err)
 		return []StockSearchResult{}
 	}
+	log.Printf("[DEBUG] API响应: %s", string(body))
 
 	// 解析JSON响应
 	var result struct {
@@ -1031,12 +1042,15 @@ func searchStocksFromEmbedded(keyword string) []StockSearchResult {
 	}
 
 	if err := json.Unmarshal(body, &result); err != nil {
+		log.Printf("[ERROR] JSON解析失败: %v", err)
 		return []StockSearchResult{}
 	}
 
 	var results []StockSearchResult
+	log.Printf("[DEBUG] API返回数据条数: %d", len(result.QuotationCodeTable.Data))
 	for _, item := range result.QuotationCodeTable.Data {
-		// 根据市场类型添加前缀
+		log.Printf("[DEBUG] 处理股票: Code=%s, Name=%s, Market=%s", item.Code, item.Name, item.Market)
+		// 根据市场类型添加前缀: 1=上海, 2=深圳
 		prefix := "sh"
 		market := "sh"
 		if item.Market == "2" {
