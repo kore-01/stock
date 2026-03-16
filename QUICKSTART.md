@@ -2,6 +2,33 @@
 
 本文档帮助你在 5 分钟内完成从代码到部署的全过程。
 
+## 🚀 已部署服务（GZ 内网）
+
+**服务已部署并运行中**：
+
+| 项目 | 详情 |
+|------|------|
+| **服务器** | GZ 内网服务器 |
+| **IP** | `10.1.20.3` |
+| **端口** | `18080`（端口 8080 被占用） |
+| **SSE 端点** | `http://10.1.20.3:18080/sse` |
+| **健康检查** | `http://10.1.20.3:18080/health` |
+| **状态** | ✅ 运行中 |
+
+**快速配置 OpenClaw**：
+```json
+{
+  "mcpServers": {
+    "jcp-stock": {
+      "url": "http://10.1.20.3:18080/sse",
+      "description": "JCP 股票数据服务 (GZ内网)"
+    }
+  }
+}
+```
+
+---
+
 ## 目录
 
 1. [推送到 GitHub](#推送到-github)
@@ -172,7 +199,37 @@ docker run -d \
 
 ## 配置 MCP 客户端
 
-### OpenClaw
+### 快速配置（使用已部署服务）
+
+**OpenClaw 配置**（编辑 `~/.config/openclaw/mcp.json`）：
+```json
+{
+  "mcpServers": {
+    "jcp-stock": {
+      "url": "http://10.1.20.3:18080/sse",
+      "description": "JCP 股票数据服务 (GZ内网)"
+    }
+  }
+}
+```
+
+**Claude Desktop 配置**：
+- Windows: `%APPDATA%\Claude\settings.json`
+- macOS: `~/Library/Application Support/Claude/settings.json`
+
+```json
+{
+  "mcpServers": {
+    "jcp-stock": {
+      "url": "http://10.1.20.3:18080/sse"
+    }
+  }
+}
+```
+
+---
+
+### OpenClaw（自定义服务器）
 
 编辑配置文件（位置：`~/.config/openclaw/mcp.json`）：
 
@@ -180,7 +237,7 @@ docker run -d \
 {
   "mcpServers": {
     "jcp-stock": {
-      "url": "http://193.112.101.212:8080/sse",
+      "url": "http://your-server:8080/sse",
       "description": "JCP 股票数据服务"
     }
   }
@@ -193,7 +250,9 @@ docker run -d \
 openclaw restart
 ```
 
-### Claude Desktop
+---
+
+### Claude Desktop（自定义服务器）
 
 编辑配置文件：
 
@@ -204,11 +263,13 @@ openclaw restart
 {
   "mcpServers": {
     "jcp-stock": {
-      "url": "http://193.112.101.212:8080/sse"
+      "url": "http://your-server:8080/sse"
     }
   }
 }
 ```
+
+**注意**：如果端口 8080 被占用，请使用 `18080` 或其他端口。
 
 重启 Claude Desktop。
 
@@ -220,7 +281,7 @@ openclaw restart
 {
   "mcpServers": {
     "jcp-stock": {
-      "url": "http://193.112.101.212:8080/sse"
+      "url": "http://your-server:8080/sse"
     }
   }
 }
@@ -230,20 +291,32 @@ openclaw restart
 
 ## 验证部署
 
-### 1. 检查服务状态
-
-```bash
-ssh root@193.112.101.212 "systemctl status jcp-mcp-server"
-```
-
-### 2. 测试 HTTP 接口
+### 1. 检查已部署服务（GZ 内网）
 
 ```bash
 # 健康检查
-curl http://193.112.101.212:8080/health
+curl http://10.1.20.3:18080/health
 
 # 预期返回
 {"status":"ok","version":"1.1.0","time":"2026-03-16T12:00:00Z"}
+
+# 查看服务信息
+curl http://10.1.20.3:18080/
+```
+
+### 2. 检查自定义部署
+
+```bash
+# SSH 到服务器
+ssh root@your-server
+
+# 检查服务状态
+systemctl status jcp-mcp-server
+
+# 本地健康检查
+curl http://localhost:8080/health
+# 或端口 18080（如果被占用）
+curl http://localhost:18080/health
 ```
 
 ### 3. 在 MCP 客户端中测试
@@ -256,23 +329,32 @@ curl http://193.112.101.212:8080/health
 
 如果 MCP 客户端正确配置，它会自动调用 `get_stock_realtime` 工具。
 
+**测试查询**：
+- "查看今天的龙虎榜"
+- "有什么最新财经快讯？"
+- "查查比亚迪的最新研报"
+
 ---
 
 ## 管理命令
 
-### 查看日志
+### 查看日志（GZ 服务器）
 
 ```bash
-ssh root@193.112.101.212 "journalctl -u jcp-mcp-server -f"
+# 查看运行日志（因为使用 nohup 启动）
+ssh root@gz "cat /opt/jcp-mcp-server/nohup.out"
+
+# 或使用 ps 查看进程
+ssh root@gz "ps aux | grep jcp-mcp-server"
 ```
 
-### 重启服务
+### 重启服务（GZ 服务器）
 
 ```bash
-ssh root@193.112.101.212 "systemctl restart jcp-mcp-server"
+ssh root@gz "pkill jcp-mcp-server; cd /opt/jcp-mcp-server && nohup ./jcp-mcp-server -mode=sse > /dev/null 2>&1 &"
 ```
 
-### 更新到最新版本
+### 更新到最新版本（自定义服务器）
 
 ```bash
 # 方式 1: 使用部署脚本
@@ -281,7 +363,7 @@ bash deploy/deploy-to-gz.sh
 # 选择选项 2 (更新代码)
 
 # 方式 2: 手动更新
-ssh root@193.112.101.212 << 'EOF'
+ssh root@your-server << 'EOF'
 cd /opt/jcp-mcp-server
 git pull
 /usr/local/go/bin/go build -ldflags="-s -w" -o jcp-mcp-server main.go sse_server.go
@@ -293,49 +375,69 @@ EOF
 
 ## 故障排查
 
-### 无法连接到服务器
+### 无法连接到 GZ 服务器
 
 ```bash
-# 测试 SSH
-ssh root@193.112.101.212 echo "OK"
+# 测试 SSH（使用 gz 主机名）
+ssh root@gz echo "OK"
 
 # 检查服务器是否在线
-ping 193.112.101.212
+ssh root@gz "hostname -I"
 ```
 
 ### 服务无法启动
 
 ```bash
-# 查看错误日志
-ssh root@193.112.101.212 "journalctl -u jcp-mcp-server -n 50 --no-pager"
+# 查看进程是否在运行
+ssh root@gz "ps aux | grep jcp-mcp-server"
+
+# 检查端口监听
+ssh root@gz "netstat -tlnp | grep 18080"
+
+# 手动启动查看错误
+ssh root@gz "cd /opt/jcp-mcp-server && ./jcp-mcp-server -mode=sse"
 ```
 
 ### 端口无法访问
 
 ```bash
 # 检查防火墙
-ssh root@193.112.101.212 "ufw status"
+ssh root@gz "ufw status"
 
-# 检查端口监听
-ssh root@193.112.101.212 "netstat -tlnp | grep 8080"
+# 检查端口监听（注意端口是 18080）
+ssh root@gz "netstat -tlnp | grep 18080"
+# 或
+ssh root@gz "ss -tlnp | grep 18080"
 ```
 
 ### MCP 客户端无法连接
 
-1. 确认服务运行：`curl http://193.112.101.212:8080/health`
+1. 确认服务运行：`curl http://10.1.20.3:18080/health`
 2. 检查防火墙设置
-3. 确认 MCP 配置格式正确
+3. 确认 MCP 配置中使用正确端口 **18080**
+4. 确认 MCP 配置格式正确：
+   ```json
+   {
+     "mcpServers": {
+       "jcp-stock": {
+         "url": "http://10.1.20.3:18080/sse"
+       }
+     }
+   }
+   ```
 
 ---
 
 ## 安全建议
 
-### 1. 修改默认端口
+### 1. 修改默认端口（GZ 服务器已使用 18080）
 
-编辑服务配置：
+GZ 服务器由于端口 8080 被占用，已使用端口 18080。
+
+对于自定义服务器，如需修改端口：
 
 ```bash
-ssh root@193.112.101.212
+ssh root@your-server
 systemctl edit jcp-mcp-server
 ```
 

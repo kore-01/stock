@@ -2,6 +2,15 @@
 
 股票数据服务 MCP Server，提供实时行情、K线数据、盘口数据、龙虎榜、研报、财联社快讯、热点榜单等功能。
 
+## 🚀 在线服务
+
+**已部署服务地址**（GZ 内网服务器）：
+- SSE 端点：`http://10.1.20.3:18080/sse`
+- 健康检查：`http://10.1.20.3:18080/health`
+- 服务状态：✅ 运行中
+
+> 注意：默认端口 8080 被占用，实际使用端口 **18080**
+
 ## 功能特性
 
 - 股票实时行情查询
@@ -39,8 +48,11 @@ go build -ldflags="-s -w" -o jcp-mcp-server main.go sse_server.go
 # 构建镜像
 docker build -t jcp-mcp-server .
 
-# 运行容器
+# 运行容器（默认端口 8080，如果被占用请修改为 18080）
 docker run -d -p 8080:8080 --name jcp-mcp jcp-mcp-server
+
+# 或使用其他端口
+docker run -d -p 18080:8080 --name jcp-mcp jcp-mcp-server
 ```
 
 ### 服务器部署
@@ -61,9 +73,11 @@ curl -fsSL https://raw.githubusercontent.com/kore-01/jcp-mcp-server/main/deploy/
 | 变量 | 说明 | 默认值 |
 |------|------|--------|
 | `MCP_MODE` | 运行模式：stdio 或 sse | `stdio` |
-| `PORT` | SSE 模式监听端口 | `8080` |
+| `PORT` | SSE 模式监听端口 | `8080`（已部署服务使用 **18080**） |
 | `BASE_URL` | SSE 服务基础 URL | `http://localhost:8080` |
 | `LOG_LEVEL` | 日志级别 | `info` |
+
+**⚠️ 注意**：如果端口 8080 被占用，请使用 `PORT=18080` 或其他可用端口。
 
 ### MCP 客户端配置
 
@@ -96,11 +110,24 @@ curl -fsSL https://raw.githubusercontent.com/kore-01/jcp-mcp-server/main/deploy/
 
 #### SSE 远程连接
 
+**已部署服务（GZ 内网）：**
 ```json
 {
   "mcpServers": {
     "jcp-stock": {
-      "url": "http://your-server:8080/sse"
+      "url": "http://10.1.20.3:18080/sse",
+      "description": "JCP 股票数据服务 (GZ内网)"
+    }
+  }
+}
+```
+
+**自定义服务器：**
+```json
+{
+  "mcpServers": {
+    "jcp-stock": {
+      "url": "http://your-server:18080/sse"
     }
   }
 }

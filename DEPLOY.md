@@ -2,6 +2,17 @@
 
 本文档详细介绍如何在各种环境中部署 JCP MCP Server。
 
+## 📍 已部署服务
+
+**GZ 内网服务器**：
+- **IP**: `10.1.20.3`
+- **端口**: `18080` (原 8080 被占用)
+- **SSE 端点**: `http://10.1.20.3:18080/sse`
+- **健康检查**: `http://10.1.20.3:18080/health`
+- **状态**: ✅ 运行中
+
+---
+
 ## 目录
 
 1. [快速部署](#快速部署)
@@ -10,6 +21,8 @@
 4. [手动部署](#手动部署)
 5. [配置说明](#配置说明)
 6. [故障排查](#故障排查)
+
+**⚠️ 注意**：本文档中默认使用端口 `8080`，但如果该端口被占用，请修改为 `18080` 或其他可用端口。
 
 ---
 
@@ -49,11 +62,20 @@ ssh root@193.112.101.212
 # 拉取镜像
 docker pull ghcr.io/kore-01/jcp-mcp-server:latest
 
-# 运行容器
+# 运行容器（端口 8080）
 docker run -d \
   --name jcp-mcp-server \
   --restart unless-stopped \
   -p 8080:8080 \
+  -e MCP_MODE=sse \
+  -e PORT=8080 \
+  ghcr.io/kore-01/jcp-mcp-server:latest
+
+# 或使用端口 18080（如果被占用）
+docker run -d \
+  --name jcp-mcp-server \
+  --restart unless-stopped \
+  -p 18080:8080 \
   -e MCP_MODE=sse \
   -e PORT=8080 \
   ghcr.io/kore-01/jcp-mcp-server:latest
@@ -63,8 +85,10 @@ docker run -d \
 
 在宝塔面板中：
 1. 进入 **安全**
-2. 添加端口规则：**8080**
+2. 添加端口规则：**8080**（或 **18080** 如果 8080 被占用）
 3. 备注：**JCP MCP Server**
+
+**⚠️ 注意**：如果端口 8080 被占用，请使用 18080 或其他可用端口。
 
 ### 方式二：通过宝塔 Supervisor 管理
 
@@ -163,7 +187,7 @@ services:
     container_name: jcp-mcp-server
     restart: unless-stopped
     ports:
-      - "8080:8080"
+      - "8080:8080"  # 如果被占用，改为 "18080:8080"
     environment:
       - MCP_MODE=sse
       - PORT=8080
@@ -188,11 +212,20 @@ docker-compose up -d
 # 拉取镜像
 docker pull ghcr.io/kore-01/jcp-mcp-server:latest
 
-# 运行
+# 运行（端口 8080）
 docker run -d \
   --name jcp-mcp-server \
   --restart unless-stopped \
   -p 8080:8080 \
+  -e MCP_MODE=sse \
+  -e PORT=8080 \
+  ghcr.io/kore-01/jcp-mcp-server:latest
+
+# 或使用端口 18080（如果被占用）
+docker run -d \
+  --name jcp-mcp-server \
+  --restart unless-stopped \
+  -p 18080:8080 \
   -e MCP_MODE=sse \
   -e PORT=8080 \
   ghcr.io/kore-01/jcp-mcp-server:latest
@@ -285,11 +318,15 @@ systemctl status jcp-mcp-server
 ### 步骤 6: 配置防火墙
 
 ```bash
-# 开放端口 8080
+# 开放端口 8080（如果被占用，请使用 18080）
 ufw allow 8080/tcp
+# 或
+ufw allow 18080/tcp
 
 # 或使用 iptables
 iptables -A INPUT -p tcp --dport 8080 -j ACCEPT
+# 或
+iptables -A INPUT -p tcp --dport 18080 -j ACCEPT
 ```
 
 ---
@@ -311,7 +348,7 @@ vim /etc/jcp-mcp-server/env
 | 变量 | 说明 | 默认值 |
 |------|------|--------|
 | `MCP_MODE` | 运行模式 | `sse` |
-| `PORT` | 监听端口 | `8080` |
+| `PORT` | 监听端口 | `8080`（如被占用请改为 **18080**） |
 | `BASE_URL` | 服务基础 URL | `http://0.0.0.0:8080` |
 | `LOG_LEVEL` | 日志级别 | `info` |
 
@@ -332,28 +369,54 @@ docker-compose restart
 
 ## 验证部署
 
-### 测试服务
+### 已部署服务（GZ 内网）
+
+**服务地址**：`http://10.1.20.3:18080`
 
 ```bash
 # 健康检查
-curl http://193.112.101.212:8080/health
+curl http://10.1.20.3:18080/health
+
+# 应返回：
+# {"status":"ok","version":"1.1.0","time":"2026-03-16T12:00:00Z"}
+```
+
+### 测试你自己的部署
+
+```bash
+# 健康检查（端口 8080）
+curl http://your-server:8080/health
+
+# 或端口 18080（如果 8080 被占用）
+curl http://your-server:18080/health
 
 # 应返回：
 # {"status":"ok","version":"1.1.0","time":"2026-03-16T12:00:00Z"}
 
 # 查看服务信息
-curl http://193.112.101.212:8080/
+curl http://your-server:8080/
 ```
 
 ### MCP 客户端配置
 
-在 OpenClaw 或其他 MCP 客户端中配置：
-
+**已部署服务（GZ 内网）**：
 ```json
 {
   "mcpServers": {
     "jcp-stock": {
-      "url": "http://193.112.101.212:8080/sse",
+      "url": "http://10.1.20.3:18080/sse",
+      "description": "JCP 股票数据服务 (GZ内网)"
+    }
+  }
+}
+```
+
+**自定义服务器**：
+```json
+{
+  "mcpServers": {
+    "jcp-stock": {
+      "url": "http://your-server:8080/sse",
       "description": "远程 JCP 股票数据服务"
     }
   }
@@ -374,15 +437,24 @@ journalctl -u jcp-mcp-server -f
 docker logs jcp-mcp-server
 ```
 
-### 端口被占用
+### 端口被占用（常见问题）
+
+**GZ 服务器部署时，端口 8080 已被占用，实际使用 18080。**
 
 ```bash
 # 检查端口占用
 netstat -tlnp | grep 8080
 lsof -i :8080
 
-# 修改端口
+# 修改端口为 18080
 # 编辑配置文件，修改 PORT 变量
+export PORT=18080
+
+# 或在 systemd 服务文件中修改
+systemctl edit jcp-mcp-server
+# 添加：
+# [Service]
+# Environment="PORT=18080"
 ```
 
 ### 防火墙问题
@@ -394,18 +466,23 @@ ufw status
 # 临时关闭防火墙测试
 ufw disable
 
-# 开放端口
+# 开放端口（根据实际使用的端口）
 ufw allow 8080/tcp
+# 或
+ufw allow 18080/tcp
 ```
 
 ### 测试连接
 
 ```bash
-# 本地测试
+# 本地测试（端口 8080）
 curl http://localhost:8080/health
 
-# 远程测试
-curl http://193.112.101.212:8080/health
+# 本地测试（端口 18080，如果 8080 被占用）
+curl http://localhost:18080/health
+
+# 远程测试（GZ 服务器已部署服务）
+curl http://10.1.20.3:18080/health
 ```
 
 ---
