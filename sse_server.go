@@ -64,9 +64,9 @@ func runSSEServer() {
 		})
 	})
 
-	// MCP SSE 端点
-	mux.HandleFunc("/sse", sseServer.ServeHTTP)
-	mux.HandleFunc("/message", sseServer.ServeHTTP)
+	// MCP SSE 端点 - SSEServer 会自动处理 /sse 和 /message
+	mux.Handle("/sse", sseServer)
+	mux.Handle("/message", sseServer)
 
 	// 根路径信息
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
