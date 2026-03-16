@@ -69,6 +69,13 @@ type KLineData struct {
 	MA20   float64 `json:"ma20,omitempty"`
 }
 
+// StockSearchResult 股票搜索结果
+type StockSearchResult struct {
+	Code   string `json:"code"`
+	Name   string `json:"name"`
+	Market string `json:"market"`
+}
+
 // OrderBook 盘口数据
 type OrderBook struct {
 	Code       string           `json:"code"`
@@ -981,10 +988,10 @@ func getMarketStatus() MarketStatus {
 }
 
 // searchStocksFromEmbedded 从内置列表搜索股票
-func searchStocksFromEmbedded(keyword string) []Stock {
+func searchStocksFromEmbedded(keyword string) []StockSearchResult {
 	// 这里简化处理，实际应该从内置的 stock_basic.json 加载
 	// 返回匹配的A股列表
-	var results []Stock
+	var results []StockSearchResult
 	keyword = strings.ToLower(keyword)
 
 	// 预定义的常见股票数据
@@ -1003,15 +1010,24 @@ func searchStocksFromEmbedded(keyword string) []Stock {
 		{"sh601318", "中国平安", "zhongguopingan"},
 		{"sz002594", "比亚迪", "biyadi"},
 		{"sh600887", "伊利股份", "yiligufen"},
+		{"sh600844", "丹化科技", "danhuakeji"},
+		{"sz300059", "东方财富", "dongfangcaifu"},
+		{"sh600000", "浦发银行", "pufayinhang"},
 	}
 
 	for _, s := range stockList {
 		if strings.Contains(strings.ToLower(s.Code), keyword) ||
 			strings.Contains(strings.ToLower(s.Name), keyword) ||
 			strings.Contains(s.Pinyin, keyword) {
-			results = append(results, Stock{
-				Code: s.Code,
-				Name: s.Name,
+			// 提取市场前缀
+			market := "sh"
+			if strings.HasPrefix(s.Code, "sz") {
+				market = "sz"
+			}
+			results = append(results, StockSearchResult{
+				Code:   s.Code,
+				Name:   s.Name,
+				Market: market,
 			})
 		}
 	}
